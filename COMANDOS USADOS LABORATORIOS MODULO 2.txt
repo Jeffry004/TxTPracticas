@@ -1,0 +1,78 @@
+ COMANDOS USADOS PRACTICA 1
+
+
+sudo apt update && sudo apt upgrade -y
+grep -r ^deb /etc/apt/sources.list /etc/apt/sources.list.d/
+apt search bashtop
+sudo apt install bashtop -y
+# Si no aparece:
+# cd /tmp
+# wget https://github.com/aristocratos/bashtop/releases/latest/download/bashtop_2.0.2_all.deb
+# sudo dpkg -i bashtop_2.0.2_all.deb
+# sudo apt --fix-broken install -y
+
+bashtop
+sudo apt purge bashtop -y
+sudo apt autoremove --purge -y
+
+====================================================================================================================================
+
+
+COMANDOS USADOS PRACTICA 2
+
+
+# Iniciar y habilitar atd
+sudo systemctl start atd
+sudo systemctl enable atd
+
+# Editar crontab para actualizar sistema a las 11 p.m.
+crontab -e
+# Agregar:
+# 0 23 * * * sudo apt update && sudo apt upgrade -y
+
+# Editar crontab para reiniciar todos los domingos a las 3 a.m.
+# Agregar:
+# 0 3 * * 0 sudo /sbin/reboot
+
+# Mostrar contenido de /tmp antes
+ls /tmp
+
+# Programar limpieza de /tmp en 1 minuto
+echo "rm -rf /tmp/*" | at now + 1 minute
+
+# Ver tareas programadas
+atq
+
+# Esperar 1 minuto, luego verificar de nuevo
+ls /tmp
+
+
+
+
+
+====================================================================================================================================
+
+COMANDOS USADOS PRACTICA 3
+
+
+lsblk
+sudo fdisk /dev/sdb
+# Dentro de fdisk: n → p → Enter → Enter → Enter → w
+
+sudo mkfs.ext4 /dev/sdb1
+
+mkdir ~/Escritorio/Disco20GB
+sudo mount /dev/sdb1 ~/Escritorio/Disco20GB
+
+cd ~/Escritorio/Disco20GB
+touch AdrianAlcantara.txt
+ls
+
+cd ~
+sudo umount ~/Escritorio/Disco20GB
+
+sudo mount /dev/sdb1 /mnt
+ls /mnt
+
+
+====================================================================================================================================
