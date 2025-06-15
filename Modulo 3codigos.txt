@@ -1,0 +1,117 @@
+Modulo 3
+
+ COMANDOS USADOS PRACTICA 1
+
+
+# Editar el archivo de configuración de GRUB
+sudo nano /etc/default/grub
+
+# (Dentro del archivo, cambiar la línea GRUB_TIMEOUT)
+# de: GRUB_TIMEOUT=10
+# a:   GRUB_TIMEOUT=20
+
+# Guardar cambios y actualizar GRUB
+sudo update-grub
+
+# Reiniciar el sistema (para comprobar los cambios)
+sudo reboot
+
+
+# --- Recuperar contraseña root desde GRUB (en modo edición) ---
+
+# En el menú de GRUB:
+# Presionar "e" en la entrada de Linux Mint
+# Cambiar esta línea:
+# linux /boot/vmlinuz... ro quiet splash
+# por:
+# linux /boot/vmlinuz... rw init=/bin/bash
+
+# Luego presionar F10 o Ctrl + X para iniciar
+
+# Una vez en modo consola root:
+passwd root      # Cambiar contraseña root
+
+# Reiniciar el sistema (elige una de estas opciones)
+exec /sbin/init
+# o
+reboot -f
+
+**************************************************************************************
+
+ COMANDOS USADOS PRACTICA 2
+
+# --- Script 1: Crear backup comprimido con fecha y hora ---
+
+nano backup.sh
+
+# Contenido del script:
+#!/bin/bash
+fecha=$(date +"%d-%m-%Y:%H:%M")
+archivo="backup-$fecha.tar.gz"
+tar -czvf "$archivo" /home/tu_usuario
+
+chmod +x backup.sh
+./backup.sh
+
+
+# --- Script 2: Guardar salida de ifconfig en el Escritorio ---
+
+nano guardar_ifconfig.sh
+
+# Contenido del script:
+#!/bin/bash
+read -p "¿Qué nombre desea ponerle al archivo? " nombre
+ruta="/home/$USER/Escritorio/${nombre}.txt"
+ifconfig > "$ruta"
+echo "Archivo guardado como $ruta"
+
+chmod +x guardar_ifconfig.sh
+./guardar_ifconfig.sh
+
+
+*****************************************************************************************
+
+COMANDOS USADOS PRACTICA 3
+
+
+# --- En la VM Linux (Mint) ---
+
+# Ver IP para usar con ping y SSH
+ip a
+
+# Instalar y habilitar SSH
+sudo apt update
+sudo apt install openssh-server
+sudo systemctl enable ssh
+sudo systemctl start ssh
+sudo systemctl status ssh
+
+# Crear carpeta SSH si se copia la llave manualmente
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+# Agregar clave pública manualmente (si no usas ssh-copy-id)
+nano ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+
+# --- En Windows (Host) ---
+
+# Probar conectividad
+ping 192.168.x.x
+
+# Conectarse por SSH (requiere contraseña)
+ssh tu_usuario@192.168.x.x
+
+# Generar claves SSH (sin passphrase)
+ssh-keygen
+
+# Mostrar clave pública
+type $env:USERPROFILE\.ssh\id_rsa.pub
+
+# Copiar clave automáticamente (si tienes ssh-copy-id)
+ssh-copy-id tu_usuario@192.168.x.x
+
+# Volver a conectar por SSH (ya sin contraseña)
+ssh tu_usuario@192.168.x.x
+
