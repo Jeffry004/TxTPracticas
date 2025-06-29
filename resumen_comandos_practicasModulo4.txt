@@ -1,0 +1,55 @@
+PRACTICA 1: SERVIDOR HTTP APACHE2
+sudo apt update
+sudo apt install apache2 -y
+echo "Hola Mundo" | sudo tee /var/www/html/hola/index.html
+sudo bash -c 'cat > /etc/apache2/sites-available/hola.conf << EOF
+<VirtualHost *:80>
+    ServerName hola.local
+    DocumentRoot /var/www/html/hola
+    <Directory /var/www/html/hola>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+</VirtualHost>
+EOF'
+sudo mkdir -p /var/www/html/misitio
+echo -e "Nombre: Jefry De Los Santos
+Matrícula: 20221304
+Materia: Seguridad Informática" | sudo tee /var/www/html/misitio/index.html
+echo "Listen 8080" | sudo tee -a /etc/apache2/ports.conf
+sudo bash -c 'cat > /etc/apache2/sites-available/misitio.conf << EOF
+<VirtualHost *:8080>
+    ServerName misitio.local
+    DocumentRoot /var/www/html/misitio
+    <Directory /var/www/html/misitio>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+</VirtualHost>
+EOF'
+sudo a2ensite hola.conf
+sudo a2ensite misitio.conf
+sudo systemctl restart apache2
+echo -e "127.0.0.1 hola.local
+127.0.0.1 misitio.local" | sudo tee -a /etc/hosts
+
+---------------------------------------------------------------------------------------------------------------------------------
+
+PRACTICA 2: SERVIDOR SMTP POSTFIX
+sudo apt update
+sudo apt install postfix mailutils -y
+sudo dpkg-reconfigure postfix
+sudo systemctl start postfix
+sudo systemctl enable postfix
+echo "Nombre: Jefry De Los Santos - Matrícula: 20221304" | mail -s "MambruSeFueALaGuerra" os3conadrian@gmail.com
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+PRACTICA 3: SERVIDOR DE IMPRESION CUPS
+sudo apt update
+sudo apt install cups printer-driver-cups-pdf -y
+sudo systemctl restart cups
+sudo apt install cups -y
+sudo lpadmin -p Nombre_Impresora -E -v ipp://IP_DEL_SERVIDOR:631/printers/NOMBRE_IMPRESORA -m everywhere
