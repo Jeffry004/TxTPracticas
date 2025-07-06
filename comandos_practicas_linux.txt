@@ -1,0 +1,71 @@
+
+PRACTICA 1: SINCRONIZACIÓN DE CARPETAS CON RSYNC
+------------------------------------------------
+# Crear carpeta y archivos en el servidor primario
+mkdir /home/usuario/carpeta_sync
+cd /home/usuario/carpeta_sync
+touch archivo{1..100}.txt
+
+# Sincronizar con rsync al servidor remoto
+rsync -avz /home/usuario/carpeta_sync/ usuario@192.168.X.X:/home/usuario/carpeta_sync/
+
+# Crear script de sincronización
+nano /home/usuario/sincronizar.sh
+
+# Contenido del script
+#!/bin/bash
+rsync -avz /home/usuario/carpeta_sync/ usuario@192.168.X.X:/home/usuario/carpeta_sync/
+
+# Dar permisos de ejecución
+chmod +x /home/usuario/sincronizar.sh
+
+# Editar crontab para ejecutar cada minuto
+crontab -e
+* * * * * /bin/bash /home/usuario/sincronizar.sh
+
+------------------------------------------------
+PRACTICA 2: INSTALACIÓN Y CONFIGURACIÓN DE CLUSTER HA
+------------------------------------------------
+# Establecer contraseña para el usuario hacluster
+sudo passwd hacluster
+
+# Habilitar y arrancar pcsd
+sudo systemctl enable pcsd
+sudo systemctl start pcsd
+
+# Autenticar nodos
+sudo pcs host auth node1 node2 -u hacluster
+
+# Configurar el cluster
+sudo pcs cluster setup node1 node2
+
+# Iniciar el cluster
+sudo pcs cluster start --all
+
+# Verificar el estado
+sudo pcs status
+
+------------------------------------------------
+PRACTICA 3: CLUSTER DE ALTA DISPONIBILIDAD HTTP CON KEEPALIVED
+------------------------------------------------
+# Instalar Apache o Nginx en ambos nodos
+sudo apt install apache2 -y
+# o
+sudo apt install nginx -y
+
+# Crear página HTML en cada nodo
+echo "Servidor 1" > /var/www/html/index.html   # en node1
+echo "Servidor 2" > /var/www/html/index.html   # en node2
+
+# Instalar Keepalived
+sudo apt install keepalived -y
+
+# Editar configuración de Keepalived
+sudo nano /etc/keepalived/keepalived.conf
+
+# Reiniciar el servicio
+sudo systemctl restart keepalived
+sudo systemctl enable keepalived
+
+# Verificar IP flotante
+ip a | grep 192.168.1.100
