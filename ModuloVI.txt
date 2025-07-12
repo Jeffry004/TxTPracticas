@@ -1,0 +1,84 @@
+
+=============================
+PRÁCTICA 1 - CIFRADO (GPG2)
+=============================
+sudo apt update
+sudo apt install gnupg2
+mkdir ~/cifrado
+echo "Este es un archivo secreto" > ~/cifrado/secreto.txt
+gpg2 -c ~/cifrado/secreto.txt
+cat ~/cifrado/secreto.txt.gpg
+gpg2 ~/cifrado/secreto.txt.gpg
+cat ~/cifrado/secreto.txt
+
+=============================================
+PRÁCTICA 2 - IP TABLES Y FIREWALL (UFW)
+=============================================
+sudo apt update
+sudo apt install apache2 vsftpd openssh-server
+sudo systemctl enable apache2 vsftpd ssh
+sudo systemctl start apache2 vsftpd ssh
+curl http://localhost
+ftp localhost
+ssh localhost
+
+# Bloquear puertos con iptables
+sudo iptables -A INPUT -p tcp --dport 80 -j DROP
+sudo iptables -A INPUT -p tcp --dport 21 -j DROP
+sudo iptables -A INPUT -p tcp --dport 22 -j DROP
+sudo iptables -L
+
+# Habilitar tráfico con iptables
+sudo iptables -D INPUT -p tcp --dport 80 -j DROP
+sudo iptables -D INPUT -p tcp --dport 21 -j DROP
+sudo iptables -D INPUT -p tcp --dport 22 -j DROP
+
+# UFW - Bloquear tráfico
+sudo ufw enable
+sudo ufw deny 80/tcp
+sudo ufw deny 21/tcp
+sudo ufw deny 22/tcp
+sudo ufw status
+
+# UFW - Permitir tráfico
+sudo ufw allow 80/tcp
+sudo ufw allow 21/tcp
+sudo ufw allow 22/tcp
+
+==============================
+PRÁCTICA 3 - IDS SNORT
+==============================
+sudo apt update
+sudo apt install snort
+sudo nano /etc/snort/rules/local.rules
+
+# Agregar reglas (contenido del archivo local.rules):
+# alert icmp any any -> $HOME_NET any (msg:"ICMP Ping detectado"; sid:1000001;)
+# alert tcp any any -> $HOME_NET 21 (msg:"FTP detectado"; sid:1000002;)
+# alert tcp any any -> $HOME_NET 22 (msg:"SSH detectado"; sid:1000003;)
+# alert tcp any any -> $HOME_NET 80 (msg:"HTTP detectado"; sid:1000004;)
+
+sudo snort -A console -q -c /etc/snort/snort.conf -i <interfaz>
+
+# Desde la máquina host:
+ping <IP_VM>
+ftp <IP_VM>
+ssh <IP_VM>
+curl http://<IP_VM>
+
+===========================================================
+PRÁCTICA 4 - 2FA CON GOOGLE AUTHENTICATOR PARA SSH
+===========================================================
+sudo apt update
+sudo apt install libpam-google-authenticator
+google-authenticator
+sudo nano /etc/pam.d/sshd
+# Agregar: auth required pam_google_authenticator.so
+sudo nano /etc/ssh/sshd_config
+# Verificar: ChallengeResponseAuthentication yes
+#            UsePAM yes
+#            PasswordAuthentication yes
+sudo systemctl restart ssh
+
+# Desde el host:
+ssh usuario@<IP_VM>
