@@ -1,0 +1,69 @@
+
+PRÁCTICA 1: Compartir archivos entre Linux con NFS
+
+# En el Servidor
+sudo apt update
+sudo apt install nfs-kernel-server
+sudo mkdir -p /srv/nfs/OS3
+cd /srv/nfs/OS3
+for i in {1..100}; do echo "Archivo $i" > "Adrian$i.txt"; done
+sudo chown -R nobody:nogroup /srv/nfs/OS3
+sudo chmod 755 /srv/nfs/OS3
+sudo nano /etc/exports
+# Agregar: /srv/nfs/OS3 192.168.1.0/24(rw,sync,no_subtree_check)
+sudo systemctl restart nfs-kernel-server
+sudo exportfs -a
+
+# En el Cliente
+sudo apt update
+sudo apt install nfs-common
+sudo mkdir -p /mnt/OS3
+sudo mount <IP_DEL_SERVIDOR>:/srv/nfs/OS3 /mnt/OS3
+ls /mnt/OS3
+sudo nano /etc/fstab
+# Agregar: <IP_DEL_SERVIDOR>:/srv/nfs/OS3 /mnt/OS3 nfs defaults 0 0
+sudo reboot
+ls /mnt/OS3
+
+-------------------------------------------------------
+
+PRÁCTICA 2: Fileserver compatible con Windows usando SAMBA
+
+# En el Servidor
+sudo apt update
+sudo apt install samba
+sudo systemctl enable smbd
+sudo systemctl start smbd
+sudo mkdir -p /srv/samba/compartida
+cd /srv/samba/compartida
+for i in {1..100}; do echo "Archivo $i" > "adrian$i.txt"; done
+sudo chmod -R 777 /srv/samba/compartida
+sudo groupadd sambagrupo
+sudo useradd -M -d /srv/samba/compartida -s /sbin/nologin usuarioadrian -G sambagrupo
+sudo smbpasswd -a usuarioadrian
+sudo nano /etc/samba/smb.conf
+# Agregar bloque [COMPARTIDA]
+sudo systemctl restart smbd
+
+# En Windows
+# Mapeo: \<IP_DEL_SERVIDOR>\COMPARTIDA
+# Usuario: usuarioadrian
+
+-------------------------------------------------------
+
+PRÁCTICA 3: Controlador de Dominio con Samba4
+
+# En el Servidor
+sudo apt install samba krb5-user winbind libnss-winbind libpam-winbind smbclient
+sudo systemctl stop smbd nmbd winbind
+sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
+sudo samba-tool domain provision --use-rfc2307 --interactive
+sudo nano /etc/krb5.conf
+# Editar con configuración de SO3.INET
+sudo systemctl unmask samba-ad-dc
+sudo systemctl enable samba-ad-dc
+sudo systemctl start samba-ad-dc
+sudo samba-tool user add lanegracubana TuMatricula
+
+# En Windows
+# Unir al dominio SO3.INET e iniciar sesión con usuario lanegracubana
