@@ -1,0 +1,86 @@
+
+=== PRÁCTICA 1: Instalación y configuración de Docker ===
+
+# Instalar Docker
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Crear carpeta para sitio web
+sudo mkdir -p /home/website
+
+# Crear página HTML de prueba
+echo "<h1>Nombre: Jeff Santana<br>Matrícula: 2025-1234</h1>" | sudo tee /home/website/index.html
+
+# Descargar imagen de NGINX
+sudo docker pull nginx
+
+# Ejecutar contenedor NGINX con volumen y puerto mapeado
+sudo docker run -d --name mi-nginx -p 8888:80 -v /home/website:/usr/share/nginx/html nginx
+
+
+=== PRÁCTICA 2: Instalación de Portainer ===
+
+# Crear volumen para Portainer
+sudo docker volume create portainer_data
+
+# Descargar y ejecutar Portainer
+sudo docker run -d --name portainer -p 9443:9443 -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
+
+# Detener contenedor de NGINX desde terminal (alternativa a detener desde Portainer web)
+sudo docker stop mi-nginx
+
+
+=== PRÁCTICA 3: Despliegue de WordPress con Docker Compose ===
+
+# Instalar Docker Compose (binario independiente)
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Crear directorio y archivo docker-compose.yml
+
+mkdir ~/wordpress && cd ~/wordpress
+
+# (Crear archivo docker-compose.yml con editor de texto)
+
+version: '3.3'
+
+services:
+  db:
+    image: mysql:5.7
+    container_name: wp-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppass
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:latest
+    container_name: wp-site
+    depends_on:
+      - db
+    ports:
+      - "8080:80"
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass
+    volumes:
+      - wp_data:/var/www/html
+
+volumes:
+  db_data:
+  wp_data:
+
+
+# Desplegar servicios con Docker Compose
+docker-compose up -d
+
+# Acceder desde navegador: http://127.0.0.1:8080
