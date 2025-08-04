@@ -1,0 +1,71 @@
+
+==============================
+PRACTICA 1 - INSTALACIÓN DE WEBMIN
+==============================
+sudo apt update
+sudo apt install -y software-properties-common apt-transport-https wget gnupg
+wget https://www.webmin.com/download/deb/webmin-current.deb
+sudo apt install -y perl libnet-ssleay-perl openssl libauthen-pam-perl \
+libpam-runtime libio-pty-perl apt-show-versions python3
+sudo dpkg -i webmin-current.deb
+sudo apt install -f
+sudo ufw allow 10000/tcp
+
+==============================
+PRACTICA 2 - DESPLIEGUE CON TERRAFORM
+==============================
+# Instalación de Terraform
+sudo apt update
+sudo apt install -y gnupg software-properties-common curl unzip
+curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update
+sudo apt install terraform
+
+# Terraform commands
+terraform init
+terraform apply
+
+==============================
+PRACTICA 3 - INSTALACIÓN Y CONFIGURACIÓN DE ANSIBLE
+==============================
+sudo apt update
+sudo apt install -y ansible
+
+# Crear usuario en cliente Linux
+sudo adduser ansible
+sudo usermod -aG sudo ansible
+
+# Generar y copiar clave SSH
+ssh-keygen -t rsa
+ssh-copy-id ansible@<IP_CLIENTE_LINUX>
+
+# Configurar WinRM en Windows (en PowerShell)
+winrm quickconfig
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value '*'
+
+# Archivo de inventario
+sudo nano /etc/ansible/hosts
+
+# Pruebas de conexión
+ansible linux -m ping
+ansible win -m win_ping
+
+==============================
+PRACTICA 4 - COMANDOS AD-HOC
+==============================
+# Copiar archivo a Windows
+ansible win -m win_copy -a "src=/home/ansible/Escritorio/prueba.txt dest=C:\\Users\\ansible\\Documents\\prueba.txt"
+
+# Reiniciar Linux remoto
+ansible linux -m reboot
+
+==============================
+PRACTICA 5 - PLAYBOOKS
+==============================
+# Playbook para instalar Notepad++ (Windows)
+ansible-playbook playbook_notepad.yml
+
+# Playbook para instalar NGINX (Linux)
+ansible-playbook playbook_nginx.yml
