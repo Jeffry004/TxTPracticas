@@ -3,70 +3,158 @@ Modulo 3
  COMANDOS USADOS PRACTICA 1
 
 
+# Entrar como superusuario
+sudo su
+
 # Editar el archivo de configuración de GRUB
-sudo nano /etc/default/grub
+nano /etc/default/grub
 
-# (Dentro del archivo, cambiar la línea GRUB_TIMEOUT)
-# de: GRUB_TIMEOUT=10
-# a:   GRUB_TIMEOUT=20
+# Dentro del archivo, dejar estas líneas (revisar la sintaxis correcta):
 
-# Guardar cambios y actualizar GRUB
-sudo update-grub
+GRUB_DEFAULT=0
+GRUB_TIMEOUT_STYLE=hidden
+GRUB_TIMEOUT=20
+GRUB_DISTRIBUTOR=$(. /etc/os-release; echo ${NAME:-Ubuntu})
+GRUB_CMDLINE_LINUX_DEFAULT=""
+GRUB_CMDLINE_LINUX=""
 
-# Reiniciar el sistema (para comprobar los cambios)
-sudo reboot
+# Guardar cambios en nano:
+# CTRL + O (guardar)
+# ENTER (confirmar)
+# CTRL + X (salir)
 
+# Limpiar pantalla (opcional)
+clear
 
-# --- Recuperar contraseña root desde GRUB (en modo edición) ---
+# Actualizar la configuración del GRUB
+update-grub
 
-# En el menú de GRUB:
-# Presionar "e" en la entrada de Linux Mint
-# Cambiar esta línea:
-# linux /boot/vmlinuz... ro quiet splash
-# por:
-# linux /boot/vmlinuz... rw init=/bin/bash
+# Reiniciar el sistema
+reboot
 
-# Luego presionar F10 o Ctrl + X para iniciar
+# --- DESPUÉS DE REINICIAR ---
 
-# Una vez en modo consola root:
-passwd root      # Cambiar contraseña root
+# (Opcional) volver a ajustar el timeout a 0 si deseas:
 
-# Reiniciar el sistema (elige una de estas opciones)
-exec /sbin/init
-# o
-reboot -f
+sudo su
+nano /etc/default/grub
+
+# Modificar estas líneas:
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT_STYLE=hidden
+GRUB_TIMEOUT=0
+GRUB_DISTRIBUTOR=$(. /etc/os-release; echo ${NAME:-Ubuntu})
+GRUB_CMDLINE_LINUX_DEFAULT=""
+GRUB_CMDLINE_LINUX=""
+
+# Guardar cambios:
+# CTRL + O
+# ENTER
+# CTRL + X
+
+# Reiniciar nuevamente:
+reboot
+
+# --- EN EL ARRANQUE ---
+
+# Presionar SHIFT (si BIOS) o ESC (si UEFI) para abrir el GRUB
+
+# Seleccionar:
+# Ubuntu, with Linux 6.8.0-60-generic (recovery mode)
+# ENTER
+
+# En el Recovery Menu, seleccionar:
+# Drop to root shell prompt
+# ENTER
+
+# Remontar el sistema de archivos en modo lectura-escritura
+mount -o remount,rw /
+
+# Cambiar la contraseña de root
+passwd root
+
+# (Escribir la nueva contraseña cuando lo solicite)
+
+# Reiniciar el sistema
+reboot
 
 **************************************************************************************
 
  COMANDOS USADOS PRACTICA 2
 
-# --- Script 1: Crear backup comprimido con fecha y hora ---
+# -----------------------------------------
+# SINTAXIS BÁSICA DE UN SCRIPT EN BASH
+# -----------------------------------------
+# 1. Primera línea (shebang) para indicar intérprete:
+#    #!/bin/bash
+#
+# 2. Variables:
+#    VAR="texto"
+#    VAR=$(comando)
+#
+# 3. Pedir datos:
+#    read -p "Mensaje: " VAR
+#
+# 4. Imprimir datos:
+#    echo "texto"
+#
+# 5. Guardar script:
+#    nano script.sh → escribir contenido
+#    CTRL+O → ENTER → CTRL+X
+#
+# 6. Dar permisos de ejecución:
+#    chmod +x script.sh
+#
+# 7. Ejecutar:
+#    ./script.sh
+# -----------------------------------------
 
-nano backup.sh
+# ========== SCRIPT 1: BACKUP ==========
+nano back.sh
 
-# Contenido del script:
+# Contenido:
 #!/bin/bash
-fecha=$(date +"%d-%m-%Y:%H:%M")
-archivo="backup-$fecha.tar.gz"
-tar -czvf "$archivo" /home/tu_usuario
+USUARIO="$(whoami)"
+FECHA="$(date +'%Y-%m-%d_%H-%M')"
 
-chmod +x backup.sh
-./backup.sh
+tar -czvf "/home/$USUARIO/bak_${FECHA}.tar.gz" "/home/$USUARIO"
+echo "Backup OK: /home/$USUARIO/bak_${FECHA}.tar.gz"
 
+# Guardar y salir: CTRL+O, ENTER, CTRL+X
 
-# --- Script 2: Guardar salida de ifconfig en el Escritorio ---
+# Dar permisos y ejecutar:
+chmod +x back.sh
+./back.sh
 
-nano guardar_ifconfig.sh
+# Verificar archivo creado:
+ls -lh ~
+# Ver contenido del backup:
+tar -tzvf bak_YYYY-MM-DD_HH-MM.tar.gz
 
-# Contenido del script:
+# ========== SCRIPT 2: GUARDAR CONFIGURACIÓN DE RED ==========
+nano ifconfig1.sh
+
+# Contenido:
 #!/bin/bash
-read -p "¿Qué nombre desea ponerle al archivo? " nombre
-ruta="/home/$USER/Escritorio/${nombre}.txt"
-ifconfig > "$ruta"
-echo "Archivo guardado como $ruta"
+USUARIO="$(whoami)"
+RUTA="/home/$USUARIO/Desktop"
+mkdir -p "$RUTA"
 
-chmod +x guardar_ifconfig.sh
-./guardar_ifconfig.sh
+read -p "Ingrese nombre de archivo: " NOMBRE
+ifconfig > "$RUTA/${NOMBRE}.txt"
+echo "Guardado en: $RUTA/${NOMBRE}.txt"
+
+# Guardar y salir: CTRL+O, ENTER, CTRL+X
+
+# Dar permisos y ejecutar:
+chmod +x ifconfig1.sh
+./ifconfig1.sh
+
+# Verificar archivo creado:
+cd ~/Desktop
+ls -lh
+cat NOMBRE_QUE_PUSISTE.txt
 
 
 *****************************************************************************************
@@ -74,44 +162,76 @@ chmod +x guardar_ifconfig.sh
 COMANDOS USADOS PRACTICA 3
 
 
-# --- En la VM Linux (Mint) ---
+# --- PASO 1: Configuración de la VM en modo Bridge ---
 
-# Ver IP para usar con ping y SSH
-ip a
+# (Este paso es en VirtualBox, no lleva código, pero lo documentamos igual)
+# - Apagar la VM
+# - Ir a Configuración → Red → Adaptador 1 → Modo: Adaptador Puente (Bridged Adapter)
+# - Seleccionar la tarjeta de red física real (Wi-Fi o Ethernet)
+# - Guardar y encender la VM
 
-# Instalar y habilitar SSH
+# --- PASO 2: Habilitar el ping en Windows ---
+
+# Abrir PowerShell como administrador y ejecutar:
+netsh advfirewall firewall add rule name="ICMP Allow incoming V4 echo request" protocol=icmpv4:8,any dir=in action=allow
+
+# En Ubuntu Server: Ver la IP de la VM
+ip addr
+
+# Desde Windows probar conectividad (ejemplo, usando la IP que te dio Ubuntu):
+ping 10.0.0.154
+
+# --- PASO 3: Instalar y activar SSH en Ubuntu ---
+
 sudo apt update
-sudo apt install openssh-server
+sudo apt install -y openssh-server
 sudo systemctl enable ssh
 sudo systemctl start ssh
 sudo systemctl status ssh
 
-# Crear carpeta SSH si se copia la llave manualmente
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
+# --- PASO 4: Probar SSH inicial con contraseña ---
 
-# Agregar clave pública manualmente (si no usas ssh-copy-id)
-nano ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
+# Desde Windows (PowerShell o CMD):
+ssh michael20250845@10.0.0.154
 
+# Te pedirá contraseña de tu usuario de Ubuntu Server.
 
-# --- En Windows (Host) ---
+# --- PASO 5: Generar claves RSA desde Windows ---
 
-# Probar conectividad
-ping 192.168.x.x
+# En PowerShell:
+ssh-keygen -t rsa -b 4096 -f $env:USERPROFILE\.ssh\id_rsa_vm
 
-# Conectarse por SSH (requiere contraseña)
-ssh tu_usuario@192.168.x.x
+# Cuando pida passphrase, presionar ENTER dos veces.
+# Genera:
+# - id_rsa_vm (clave privada)
+# - id_rsa_vm.pub (clave pública)
 
-# Generar claves SSH (sin passphrase)
-ssh-keygen
+# --- PASO 6: Copiar clave pública a Ubuntu ---
 
-# Mostrar clave pública
-type $env:USERPROFILE\.ssh\id_rsa.pub
+# Desde PowerShell en Windows:
+type $env:USERPROFILE\.ssh\id_rsa_vm.pub |
+  ssh michael20250845@10.0.0.154 `
+    "mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys"
 
-# Copiar clave automáticamente (si tienes ssh-copy-id)
-ssh-copy-id tu_usuario@192.168.x.x
+ssh -i $env:USERPROFILE\.ssh\id_rsa_vm michael20250845@10.0.0.154
 
-# Volver a conectar por SSH (ya sin contraseña)
-ssh tu_usuario@192.168.x.x
+# --- PASO 7: Verificar configuración SSH en Ubuntu ---
 
+# Editar archivo de configuración de SSH:
+sudo nano /etc/ssh/sshd_config
+
+# Asegurarse que estén estas líneas (descomentadas o agregadas):
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+
+# Guardar: CTRL+O → ENTER → CTRL+X
+
+# Reiniciar el servicio SSH:
+sudo systemctl restart ssh
+
+# --- PASO 8: Probar conexión SSH sin contraseña ---
+
+# Desde Windows:
+ssh -i "$env:USERPROFILE\.ssh\id_rsa_vm" michael20250845@10.0.0.154
+
+# Si todo está bien: accede sin pedir clave
