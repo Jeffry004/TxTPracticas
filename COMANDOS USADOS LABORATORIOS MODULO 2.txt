@@ -1,19 +1,58 @@
- COMANDOS USADOS PRACTICA 1
+------------------------- COMANDOS USADOS PRACTICA 1 ----------------------------
 
 
-sudo apt update && sudo apt upgrade -y
-grep -r ^deb /etc/apt/sources.list /etc/apt/sources.list.d/
-apt search bashtop
-sudo apt install bashtop -y
-# Si no aparece:
-# cd /tmp
-# wget https://github.com/aristocratos/bashtop/releases/latest/download/bashtop_2.0.2_all.deb
-# sudo dpkg -i bashtop_2.0.2_all.deb
-# sudo apt --fix-broken install -y
+# Actualizar lista de paquetes
+apt update
 
+# Instalar actualizaciones disponibles
+apt upgrade
+
+# Ver lista de repositorios principales
+cat /etc/apt/sources.list
+
+# Ver repositorios adicionales (archivos .list en la carpeta sources.list.d)
+cat /etc/apt/sources.list.d/*
+
+# Listar archivos de repos adicionales
+ls /etc/apt/sources.list.d/*
+
+# Eliminar paquete bashtop (y confirmar automáticamente)
+apt purge bashtop -y
+
+# Buscar bashtop en el repositorio
+apt-cache search bashtop
+
+# Instalar bashtop
+apt install bashtop
+
+# Ejecutar bashtop
 bashtop
-sudo apt purge bashtop -y
-sudo apt autoremove --purge -y
+# ^C para salir
+
+# Salir del prompt si quedó en modo interactivo
+#q
+
+# Intentar purgar bashtop (sin confirmar)
+apt purge bashtop
+#n para cancelar
+
+# Purgar bashtop con confirmación automática
+apt purge bashtop -y
+
+# Eliminar dependencias que ya no se usan
+apt autoremove -y
+
+# Quitar el repositorio PPA de bashtop
+add-apt-repository --remove ppa:bashtop-monitor/bashtop -y
+
+# Actualizar lista de paquetes nuevamente
+apt update
+
+# Ver paquetes que se pueden actualizar
+apt list --upgradable
+
+# Actualizar paquetes disponibles
+apt upgrade
 
 ====================================================================================================================================
 
@@ -21,29 +60,62 @@ sudo apt autoremove --purge -y
 COMANDOS USADOS PRACTICA 2
 
 
-# Iniciar y habilitar atd
-sudo systemctl start atd
-sudo systemctl enable atd
+# -----------------------------------------
+# CRON Y AT EN LINUX
+# -----------------------------------------
+# CRON: Ejecuta tareas periódicas según 5 campos:
+#   ┌──────── min (0-59)
+#   │ ┌────── hora (0-23)
+#   │ │ ┌──── día del mes (1-31)
+#   │ │ │ ┌── mes (1-12)
+#   │ │ │ │ ┌─ día de la semana (0-6) [0=Domingo]
+#   │ │ │ │ │
+#   * * * * * comando
+#
+# Ejemplos:
+#   0 23 * * * → a las 23:00 todos los días
+#   30 8 * * 1 → lunes a las 08:30
+#   */5 * * * * → cada 5 minutos
+#
+# AT: Ejecuta una tarea una sola vez en el futuro.
+#   Sintaxis básica:
+#     echo "comando" | at hora
+#     echo "comando" | at now + tiempo
+#   Ejemplos:
+#     echo "ls" | at 15:00
+#     echo "ls" | at now + 2 minutes
+# -----------------------------------------
 
-# Editar crontab para actualizar sistema a las 11 p.m.
+# Ser superusuario
+sudo su
+
+# Editar cron del usuario root
 crontab -e
-# Agregar:
-# 0 23 * * * sudo apt update && sudo apt upgrade -y
 
-# Editar crontab para reiniciar todos los domingos a las 3 a.m.
-# Agregar:
-# 0 3 * * 0 sudo /sbin/reboot
+# Todos los días a las 23:00 actualizar y actualizar paquetes
+0 23 * * * apt update && apt upgrade -y
+# ^X → Enter → Enter para guardar y salir
 
-# Mostrar contenido de /tmp antes
+# Editar cron nuevamente
+crontab -e
+
+# Reiniciar todos los domingos a las 03:00
+0 3 * * 0 /sbin/reboot
+# ^X → Enter → Enter
+
+# Instalar at (para tareas únicas)
+apt install at -y
+
+# Habilitar y arrancar servicio atd
+systemctl enable --now atd
+
+# Listar /tmp
 ls /tmp
 
-# Programar limpieza de /tmp en 1 minuto
+# Programar borrado de /tmp en 1 minuto desde ahora
 echo "rm -rf /tmp/*" | at now + 1 minute
 
-# Ver tareas programadas
-atq
-
-# Esperar 1 minuto, luego verificar de nuevo
+# Ver /tmp después
 ls /tmp
 
 
@@ -55,24 +127,60 @@ ls /tmp
 COMANDOS USADOS PRACTICA 3
 
 
+# Ser superusuario
+sudo su
+
+# Ver discos y particiones actuales
 lsblk
-sudo fdisk /dev/sdb
-# Dentro de fdisk: n → p → Enter → Enter → Enter → w
+fdisk -l
 
-sudo mkfs.ext4 /dev/sdb1
+# Crear partición en /dev/sdb
+fdisk /dev/sdb
+# n → nueva partición
+# p → primaria
+# ENTER → inicio por defecto
+# ENTER → final por defecto
+# ENTER → confirmar
+# w → guardar cambios
 
-mkdir ~/Escritorio/Disco20GB
-sudo mount /dev/sdb1 ~/Escritorio/Disco20GB
+# Verificar nueva partición
+lsblk
+fdisk -l
 
-cd ~/Escritorio/Disco20GB
+# Formatear en EXT4
+mkfs.ext4 /dev/sdb1
+
+# Confirmar tipo de sistema de archivos
+blkid /dev/sdb1
+
+# Crear carpeta de montaje
+mkdir ~/DiscoAdrian
+
+# Montar disco en carpeta
+mount /dev/sdb1 ~/DiscoAdrian
+
+# Ver uso de espacio
+df -h ~/DiscoAdrian
+
+# Entrar y crear archivo
+cd ~/DiscoAdrian
 touch AdrianAlcantara.txt
-ls
 
+# Volver al home
 cd ~
-sudo umount ~/Escritorio/Disco20GB
 
-sudo mount /dev/sdb1 /mnt
+# Desmontar disco
+umount ~/DiscoAdrian
+
+# Montar en /mnt
+mount /dev/sdb1 /mnt
+
+# Ver contenido y uso
 ls /mnt
+df -h /mnt
+
+# Probar lectura del archivo
+cat /mnt/AdrianAlcantara.txt
 
 
 ====================================================================================================================================
