@@ -143,3 +143,5 @@ sudo apt upgrade -y
 Limpiar paquetes innecesarios
 
 sudo apt autoremove -y
+
+
