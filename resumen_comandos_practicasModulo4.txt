@@ -1,39 +1,125 @@
 PRACTICA 1: SERVIDOR HTTP APACHE2
-sudo apt update
-sudo apt install apache2 -y
-echo "Hola Mundo" | sudo tee /var/www/html/hola/index.html
-sudo bash -c 'cat > /etc/apache2/sites-available/hola.conf << EOF
-<VirtualHost *:80>
-    ServerName hola.local
-    DocumentRoot /var/www/html/hola
-    <Directory /var/www/html/hola>
-        Options Indexes FollowSymLinks
-        AllowOverride None
-        Require all granted
-    </Directory>
-</VirtualHost>
-EOF'
-sudo mkdir -p /var/www/html/misitio
-echo -e "Nombre: Jefry De Los Santos
-Matrícula: 20221304
-Materia: Seguridad Informática" | sudo tee /var/www/html/misitio/index.html
-echo "Listen 8080" | sudo tee -a /etc/apache2/ports.conf
-sudo bash -c 'cat > /etc/apache2/sites-available/misitio.conf << EOF
-<VirtualHost *:8080>
-    ServerName misitio.local
-    DocumentRoot /var/www/html/misitio
-    <Directory /var/www/html/misitio>
-        Options Indexes FollowSymLinks
-        AllowOverride None
-        Require all granted
-    </Directory>
-</VirtualHost>
-EOF'
-sudo a2ensite hola.conf
-sudo a2ensite misitio.conf
-sudo systemctl restart apache2
-echo -e "127.0.0.1 hola.local
-127.0.0.1 misitio.local" | sudo tee -a /etc/hosts
+# ------------------ INSTALAR Y CONFIGURAR APACHE ------------------
+
+sudo apt update                                # Actualiza la lista de paquetes del sistema
+sudo apt install apache2 -y                   # Instala el servidor web Apache2
+
+sudo rm /var/www/html/index.html               # Elimina el archivo index.html por defecto de Apache
+echo 'Hola Mundo' | sudo tee /var/www/html/index.html  # Crea un nuevo index.html con el texto "Hola Mundo"
+
+# Copiamos la configuración por defecto de Apache para crear un nuevo VirtualHost
+sudo cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/michaelrobles.conf
+
+# Editamos el nuevo archivo de configuración de Apache
+sudo nano /etc/apache2/sites-available/michaelrobles.conf
+# --- Contenido dentro del archivo ---
+# <VirtualHost *:80>
+#     ServerAdmin michael20250845@localhost   # Email del administrador
+#     DocumentRoot /var/www/html              # Carpeta raíz del sitio
+#     ServerName michaelrobles.local          # Nombre del sitio
+# </VirtualHost>
+
+# Activamos el nuevo sitio en Apache
+sudo a2ensite michaelrobles.conf
+
+# Recargamos Apache para aplicar cambios
+sudo systemctl reload apache2
+
+
+# ------------------ INSTALAR Y CONFIGURAR NGINX ------------------
+
+sudo apt install nginx -y                      # Instala el servidor web NGINX
+
+# Detenemos Apache para evitar conflicto de puertos (ambos usan por defecto el 80)
+sudo systemctl stop apache2 
+
+# Creamos la carpeta para nuestro sitio en NGINX
+sudo mkdir -p /var/www/misitio_nginx
+
+# Creamos el archivo index.html con el contenido de la página
+sudo nano /var/www/misitio_nginx/index.html
+# --- Contenido dentro del archivo ---
+# <html>
+#   <body>
+#     <h1>Michael Robles</h1>
+#     <h2>Matrícula: 2025 0845</h2>
+#     <h2>Materia: Sistemas Operativos 3</h2>
+#     <p>Servidor NGINX en puerto 8080</p>
+#   </body>
+# </html>
+
+# Copiamos la configuración por defecto de NGINX para modificarla
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/misitio8080
+
+# Editamos el nuevo archivo de configuración
+sudo nano /etc/nginx/sites-available/misitio8080
+# --- Contenido dentro del archivo ---
+# server {
+#     listen 8080;                             # Puerto en el que escuchará NGINX
+#     server_name localhost;                   # Nombre del servidor
+#     root /var/www/misitio_nginx;              # Carpeta raíz del sitio
+#     index index.html;                         # Página de inicio
+#
+#     location / {
+#         try_files $uri $uri/ =404;            # Manejo de rutas y errores 404
+#     }
+# }
+
+# Hacemos un enlace simbólico para habilitar el nuevo sitio en NGINX
+sudo ln -s /etc/nginx/sites-available/misitio8080 /etc/nginx/sites-enabled/
+
+# Probamos la configuración de NGINX para asegurarnos de que no haya errores
+sudo nginx -t
+
+# Recargamos NGINX para aplicar cambios
+sudo systemctl reload nginx
+
+
+
+#CODIGOS DEL TROUBLESHOOTING INNECESARIOS
+
+# Verificar estado de NGINX
+sudo systemctl status nginx
+
+# Probar sintaxis de configuración de NGINX
+sudo nginx -t
+
+# Ver si NGINX está escuchando en el puerto 8080
+sudo ss -tulpn | grep 8080
+
+# Ver si hay otro proceso usando el puerto 8080
+sudo lsof -i :8080
+sudo netstat -tulpn | grep 8080
+
+
+
+# Ver archivos de configuración activos en NGINX
+ls -l /etc/nginx/sites-enabled/
+cat /etc/nginx/sites-available/misitio8080
+
+# Verificar existencia y permisos del directorio del sitio
+ls -l /var/www/misitio_nginx/
+
+# Comprobar acceso local al sitio desde la VM
+curl http://localhost:8080
+
+# Comprobar acceso desde Windows a la IP del server y puerto
+ping 10.0.0.154
+curl http://10.0.0.154:8080
+
+# Verificar firewall UFW en Ubuntu y abrir el puerto 8080 si es necesario
+sudo ufw status
+sudo ufw allow 8080/tcp
+sudo ufw reload
+
+# Revisar la IP de la VM para confirmar que está en la red correcta
+ip addr
+
+# Quitar el archivo default de sites-enabled si está causando conflictos
+sudo rm /etc/nginx/sites-enabled/default
+
+# (Opcional) Ver logs de errores de NGINX
+sudo tail -n 30 /var/log/nginx/error.log
 
 ---------------------------------------------------------------------------------------------------------------------------------
 
@@ -48,8 +134,83 @@ echo "Nombre: Jefry De Los Santos - Matrícula: 20221304" | mail -s "MambruSeFue
 ----------------------------------------------------------------------------------------------------------------------------------
 
 PRACTICA 3: SERVIDOR DE IMPRESION CUPS
-sudo apt update
-sudo apt install cups printer-driver-cups-pdf -y
-sudo systemctl restart cups
-sudo apt install cups -y
-sudo lpadmin -p Nombre_Impresora -E -v ipp://IP_DEL_SERVIDOR:631/printers/NOMBRE_IMPRESORA -m everywhere
+CONFIGURACIÓN DE CUPS + IMPRESORA VIRTUAL PDF EN UBUNTU SERVER  
+Servidor Ubuntu: 10.0.0.200  
+
+------------------------------------------------------------
+1) INSTALAR CUPS Y EL MÓDULO DE IMPRESORA PDF
+------------------------------------------------------------
+sudo apt update                                   # Actualiza lista de paquetes
+sudo apt install cups cups-pdf -y                 # Instala CUPS (servidor de impresión) y soporte para impresora PDF
+
+------------------------------------------------------------
+2) CONFIGURAR CUPS PARA ADMINISTRACIÓN REMOTA Y COMPARTIR IMPRESORAS
+------------------------------------------------------------
+sudo cupsctl --remote-admin --remote-any --share-printers  
+# --remote-admin → Permite acceder al panel de CUPS desde otro equipo vía web  
+# --remote-any → Permite que cualquier host pueda conectarse a CUPS  
+# --share-printers → Comparte las impresoras configuradas con otros clientes
+
+------------------------------------------------------------
+3) DAR PERMISOS AL USUARIO Y ROOT PARA ADMINISTRAR CUPS
+------------------------------------------------------------
+sudo usermod -aG lpadmin michael20250845   # Agrega al usuario al grupo lpadmin (administradores de CUPS)
+sudo usermod -aG lpadmin root              # También agrega root al grupo lpadmin
+
+------------------------------------------------------------
+4) REINICIAR Y VERIFICAR EL SERVICIO CUPS
+------------------------------------------------------------
+sudo systemctl restart cups    # Reinicia el servicio para aplicar cambios
+sudo systemctl status cups     # Verifica que CUPS esté activo y corriendo
+
+------------------------------------------------------------
+5) CONFIGURAR IMPRESORA DESDE UN NAVEGADOR EN EL CLIENTE
+------------------------------------------------------------
+# Abrir en el navegador:
+10.0.0.200:631
+
+# En el panel web:
+Administration → Add Printer  
+→ Continuar en modo no seguro (HTTPS opcional)  
+→ Autenticación:  
+   Usuario: michael20250845  
+   Contraseña: michael20250845  
+
+# Seleccionar la impresora:
+- CUPS-PDF (Virtual PDF Printer)  
+- Nombre: PDFlol  
+- Driver: Generic  
+- Modelo: Generic w/no options
+
+------------------------------------------------------------
+6) AGREGAR IMPRESORA DESDE WINDOWS (CLIENTE)
+------------------------------------------------------------
+Panel de Control → Dispositivos e impresoras → Agregar impresora  
+
+Si la impresora aparece automáticamente → probar impresión.  
+Si NO aparece:
+1. Click en "Mi impresora no está en la lista"  
+2. Agregar impresora usando dirección TCP/IP  
+   - Dirección IP: 10.0.0.200  
+3. Cuando pida el controlador:
+   - Fabricante: Generic  
+   - Impresora: Generic / PostScript Printer
+
+------------------------------------------------------------
+7) PRUEBA DE IMPRESIÓN DESDE WORD (WINDOWS)
+------------------------------------------------------------
+- Abrir Word  
+- Guardar archivo como HOLA.docx  
+- Imprimir seleccionando la impresora CUPS (PDFlol)  
+- El archivo se guardará como PDF en el servidor
+
+------------------------------------------------------------
+8) VERIFICAR ARCHIVO PDF EN EL SERVIDOR (UBUNTU)
+------------------------------------------------------------
+ls -l /var/spool/cups-pdf/         # Ver carpetas donde se guardan los PDF generados
+cd /var/spool/cups-pdf/ANONYMOUS   # Ir a la carpeta de documentos impresos anónimamente
+ls                                 # Listar archivos PDF generados
+# Ejemplo de archivo generado:
+Microsoft_Word_-_HOLA.docx.pdf
+
+cat Microsoft_Word_-_HOLA.docx.pdf  # Mostrar contenido binario del PDF (solo para verificar que existe)
